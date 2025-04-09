@@ -1,35 +1,32 @@
 import sqlite3
+import os
+from datetime import datetime
 
-def criar_banco():
-    conn = sqlite3.connect('perguntas.db')
+def salvar_resultado(nome, acertos, erros):
+    caminho = os.path.join(os.path.dirname(__file__), "quiz.db")
+    conn = sqlite3.connect(caminho)
     cursor = conn.cursor()
 
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS perguntas (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            pergunta TEXT,
-            alternativa_a TEXT,
-            alternativa_b TEXT,
-            alternativa_c TEXT,
-            alternativa_d TEXT,
-            correta TEXT
-        )
-    ''')
+    data = datetime.now().strftime("%d/%m/%Y %H:%M:%S")
 
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS ranking (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            nome TEXT,
-            pontuacao INTEGER
-        )
-    ''')
-
-    # Exemplo de perguntas (adicione mais se quiser)
-    cursor.execute("INSERT INTO perguntas (pergunta, alternativa_a, alternativa_b, alternativa_c, alternativa_d, correta) VALUES (?, ?, ?, ?, ?, ?)",
-                   ("Qual a capital do Brasil?", "São Paulo", "Brasília", "Rio de Janeiro", "Salvador", "b"))
+    cursor.execute("""
+        INSERT INTO respostas_jogadores (nome, acertos, erros, data)
+        VALUES (?, ?, ?, ?)
+    """, (nome, acertos, erros, data))
 
     conn.commit()
     conn.close()
 
-if __name__ == '__main__':
-    criar_banco()
+def obter_ranking():
+    caminho = os.path.join(os.path.dirname(__file__), "quiz.db")
+    conn = sqlite3.connect(caminho)
+    cursor = conn.cursor()
+    cursor.execute("""
+        SELECT nome, acertos, erros, data
+        FROM respostas_jogadores
+        ORDER BY acertos DESC, erros ASC
+        LIMIT 10
+    """)
+    ranking = cursor.fetchall()
+    conn.close()
+    return ranking
